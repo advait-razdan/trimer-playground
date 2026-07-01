@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback, useState, useRef } from 'react';
+import { useReducer, useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { appReducer, createInitialState } from '../state/reducer';
 import { computeFingerprints } from '../state/fingerprints';
 import { computeAllTraces } from '../state/fingerprints';
@@ -13,6 +13,8 @@ import { Toolbar } from '../components/Toolbar';
 import { PresetLoader } from '../components/PresetLoader';
 import { InvariantCard } from '../components/InvariantCard';
 import { RulesToggles } from '../components/shared/RulesToggles';
+import { ProveModal } from '../components/polyomino/ProveModal';
+import { computeInvariantBasis } from '../state/invariants';
 import { loadRules, saveRules } from '../state/rules';
 import type { RuleToggles } from '../state/rules';
 import type { CellPosition, InteractionMode, MoveType, AppState } from '../state/types';
@@ -96,6 +98,14 @@ export function RectangularRoute() {
 
   // Dimension change pending
   const [pendingDims, setPendingDims] = useState<{ rows: number; cols: number } | null>(null);
+
+  // Prove reachability state
+  const [showProve, setShowProve] = useState(false);
+  const rectMask = useMemo(() =>
+    Array.from({ length: rows }, () => Array(cols).fill(true) as boolean[]),
+    [rows, cols]
+  );
+  const rectBasis = useMemo(() => computeInvariantBasis(rectMask), [rectMask]);
 
   // Rule toggles
   const [rules, setRules] = useState<RuleToggles>(() => loadRules('rectangular'));
@@ -357,6 +367,17 @@ export function RectangularRoute() {
         </div>
       )}
 
+      {/* Prove reachability modal */}
+      {showProve && gridB && (
+        <ProveModal
+          liveGrid={liveGrid}
+          targetGrid={gridB}
+          mask={rectMask}
+          basis={rectBasis}
+          onClose={() => setShowProve(false)}
+        />
+      )}
+
       {/* Dimension change confirmation */}
       {pendingDims && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
@@ -612,6 +633,16 @@ export function RectangularRoute() {
             targetFingerprints={targetFingerprints}
             showTarget={showTarget}
           />
+
+          {/* Prove Reachability */}
+          {showTarget && gridB && (
+            <button
+              className="mt-2 mb-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => setShowProve(true)}
+            >
+              Prove Reachability
+            </button>
+          )}
 
           {/* Invariant explanation card */}
           {lastMove && (

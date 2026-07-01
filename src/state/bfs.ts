@@ -13,6 +13,15 @@ function mod3(n: number): number {
   return ((n % 3) + 3) % 3;
 }
 
+/** Extract the 3 cell indices where the move vector has value 1. */
+function getMoveIndices(move: TrimerMove): [number, number, number] {
+  const indices: number[] = [];
+  for (let i = 0; i < move.vector.length; i++) {
+    if (move.vector[i] === 1) indices.push(i);
+  }
+  return indices as [number, number, number];
+}
+
 /** A single step in a move sequence. */
 export interface MoveStep {
   direction: 'H' | 'V';
@@ -67,6 +76,9 @@ export function findMoveSequence(
   visited.set(aKey, null);
   const queue: string[] = [aKey];
 
+  // Precompute the 3 cell indices for each move for legality checks
+  const moveIndices = basis.moves.map(getMoveIndices);
+
   while (queue.length > 0) {
     if (visited.size > maxStates) {
       return { status: 'too_large' };
@@ -75,7 +87,13 @@ export function findMoveSequence(
     const stateKey = queue.shift()!;
     const state = stateKey.split(',').map(Number);
 
-    for (const move of basis.moves) {
+    for (let mi = 0; mi < basis.moves.length; mi++) {
+      const move = basis.moves[mi];
+      const [i0, i1, i2] = moveIndices[mi];
+
+      // Legality check: the 3 cells must have equal values
+      if (state[i0] !== state[i1] || state[i1] !== state[i2]) continue;
+
       for (const mult of [1, 2]) {
         const newState = state.slice();
         for (let i = 0; i < newState.length; i++) {
@@ -135,6 +153,9 @@ export function enumerateReachable(
   visited.add(startKey);
   const frontier: string[] = [startKey];
 
+  // Precompute the 3 cell indices for each move for legality checks
+  const moveIndices = basis.moves.map(getMoveIndices);
+
   while (frontier.length > 0) {
     if (visited.size > maxStates) {
       return { states: visited, capped: true };
@@ -143,7 +164,13 @@ export function enumerateReachable(
     const stateKey = frontier.pop()!;
     const state = stateKey.split(',').map(Number);
 
-    for (const move of basis.moves) {
+    for (let mi = 0; mi < basis.moves.length; mi++) {
+      const move = basis.moves[mi];
+      const [i0, i1, i2] = moveIndices[mi];
+
+      // Legality check: the 3 cells must have equal values
+      if (state[i0] !== state[i1] || state[i1] !== state[i2]) continue;
+
       for (const mult of [1, 2]) {
         const newState = state.slice();
         for (let i = 0; i < newState.length; i++) {

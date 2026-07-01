@@ -13,15 +13,9 @@ describe('findMoveSequence', () => {
     `);
     const basis = computeInvariantBasis(mask);
 
-    // A = zeros, B = apply one H-trimer at row 1 + one V-trimer at col 0
+    // A = zeros, B = two H-trimer applications at row 1 (legally reachable)
     const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-    const B = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
-    // Apply H-trimer at row 1, cols 0,1,2: add 1 to each
-    B[1][0] = 1; B[1][1] = 1; B[1][2] = 1;
-    // Apply V-trimer at col 0, rows 0,1,2: add 2 (≡-1 mod 3)
-    B[0][0] = (B[0][0] + 2) % 3;
-    B[1][0] = (B[1][0] + 2) % 3;
-    B[2][0] = (B[2][0] + 2) % 3;
+    const B = [[0, 0, 0], [2, 2, 2], [0, 0, 0]];
 
     const result = findMoveSequence(A, B, basis);
     expect(result.status).toBe('found');
@@ -70,8 +64,8 @@ describe('enumerateReachable', () => {
 
     const result = enumerateReachable(profile, basis);
     expect(result.capped).toBe(false);
-    // The spec says: "enumerates exactly 9 reachable states"
-    expect(result.states.size).toBe(9);
+    // With legal-move constraints (cells must be equal), 5 states are reachable
+    expect(result.states.size).toBe(5);
   });
 });
 
@@ -89,7 +83,7 @@ describe('prove', () => {
     const result = prove(A, B, basis);
     expect(result.type).toBe('unreachable_exhaustive');
     if (result.type === 'unreachable_exhaustive') {
-      expect(result.totalReachable).toBe(9);
+      expect(result.totalReachable).toBe(5);
       expect(result.disagreeing.length).toBeGreaterThan(0);
     }
   });

@@ -59,13 +59,12 @@ function MiniGrid({ grid, mask, highlightCells }: { grid: Grid; mask: ShapeMask;
               return (
                 <td
                   key={j}
-                  className="w-7 h-7 text-center text-xs font-mono border border-gray-200"
+                  className="w-7 h-7 text-center text-xs font-mono"
                   style={{
-                    backgroundColor: active
-                      ? highlighted
-                        ? 'rgba(59, 130, 246, 0.3)'
-                        : getCellColor(val)
-                      : '#e5e7eb',
+                    backgroundColor: active ? getCellColor(val) : '#e5e7eb',
+                    border: highlighted
+                      ? '2px solid #22c55e'
+                      : '1px solid #d1d5db',
                     backgroundImage: active ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
                     opacity: active ? 1 : 0.3,
                     transition: 'background-color 0.3s ease',
@@ -85,6 +84,7 @@ function MiniGrid({ grid, mask, highlightCells }: { grid: Grid; mask: ShapeMask;
 function ReachableDisplay({ sequence, liveGrid, mask }: { sequence: MoveStep[]; liveGrid: Grid; mask: ShapeMask }) {
   const [stepIndex, setStepIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(800);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Compute the grid state at the current step
@@ -122,11 +122,11 @@ function ReachableDisplay({ sequence, liveGrid, mask }: { sequence: MoveStep[]; 
     }
     timerRef.current = setTimeout(() => {
       setStepIndex(prev => prev + 1);
-    }, 600);
+    }, playbackSpeed);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, stepIndex, sequence.length]);
+  }, [isPlaying, stepIndex, sequence.length, playbackSpeed]);
 
   if (sequence.length === 0) {
     return (
@@ -171,6 +171,18 @@ function ReachableDisplay({ sequence, liveGrid, mask }: { sequence: MoveStep[]; 
           disabled={stepIndex >= sequence.length - 1}
           onClick={() => setStepIndex(sequence.length - 1)}
         >&gt;|</button>
+        <label className="flex items-center gap-1 ml-2 text-xs text-gray-500">
+          Speed
+          <input
+            type="range"
+            min={100}
+            max={5000}
+            step={100}
+            value={5100 - playbackSpeed}
+            onChange={e => setPlaybackSpeed(5100 - Number(e.target.value))}
+            className="w-20 h-3 accent-blue-500"
+          />
+        </label>
         <span className="text-xs text-gray-500 ml-2">
           Step {stepIndex + 1} of {sequence.length}
         </span>

@@ -40,7 +40,13 @@ export function GuidedTour({ active, onEnd }: GuidedTourProps) {
 
   // Position tooltip below the highlighted element
   const tooltipTop = pos ? pos.top + pos.height + 12 : 200;
-  const tooltipLeft = pos ? Math.max(16, Math.min(pos.left, window.innerWidth - 340)) : 100;
+  const elementCenter = pos ? pos.left + pos.width / 2 : 0;
+  const isRightSide = pos ? elementCenter > window.innerWidth / 2 : false;
+  const tooltipLeft = pos
+    ? isRightSide
+      ? Math.max(16, pos.left + pos.width - 320)
+      : Math.max(16, Math.min(pos.left, window.innerWidth - 340))
+    : 100;
 
   return (
     <>
