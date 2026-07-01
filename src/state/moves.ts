@@ -20,11 +20,14 @@ export function canApplyMod3(grid: Grid): boolean {
   return true;
 }
 
-/** Validate whether a move is legal on the given grid */
+/** Validate whether a move is legal on the given grid.
+ *  @param allowAbove3 - when true, the "< 3" placement rule is relaxed.
+ */
 export function validateMove(
   grid: Grid,
   moveType: MoveType,
   position?: CellPosition,
+  allowAbove3 = false,
 ): ValidationResult {
   const rows = grid.length;
   const cols = grid[0]?.length ?? 0;
@@ -53,7 +56,7 @@ export function validateMove(
     if (row < 0 || row >= rows || col < 0 || col >= cols) {
       return { valid: false, reason: `Position (${row},${col}) is out of bounds.` };
     }
-    if (grid[row][col] >= 3) {
+    if (!allowAbove3 && grid[row][col] >= 3) {
       return { valid: false, reason: `Cell (${row},${col}) has value ${grid[row][col]}, which is already \u2265 3.` };
     }
     return { valid: true };
@@ -66,7 +69,7 @@ export function validateMove(
     const v0 = grid[row][col];
     const v1 = grid[row][col + 1];
     const v2 = grid[row][col + 2];
-    if (v0 >= 3 || v1 >= 3 || v2 >= 3) {
+    if (!allowAbove3 && (v0 >= 3 || v1 >= 3 || v2 >= 3)) {
       return { valid: false, reason: `Cells are ${v0}, ${v1}, ${v2} \u2014 at least one is \u2265 3.` };
     }
     if (v0 !== v1 || v1 !== v2) {
@@ -82,7 +85,7 @@ export function validateMove(
     const v0 = grid[row][col];
     const v1 = grid[row + 1][col];
     const v2 = grid[row + 2][col];
-    if (v0 >= 3 || v1 >= 3 || v2 >= 3) {
+    if (!allowAbove3 && (v0 >= 3 || v1 >= 3 || v2 >= 3)) {
       return { valid: false, reason: `Cells are ${v0}, ${v1}, ${v2} \u2014 at least one is \u2265 3.` };
     }
     if (v0 !== v1 || v1 !== v2) {
@@ -99,8 +102,9 @@ export function applyMove(
   grid: Grid,
   moveType: MoveType,
   position?: CellPosition,
+  allowAbove3 = false,
 ): { newGrid: Grid; move: Move } {
-  const validation = validateMove(grid, moveType, position);
+  const validation = validateMove(grid, moveType, position, allowAbove3);
   if (!validation.valid) {
     throw new Error(validation.reason ?? 'Invalid move');
   }

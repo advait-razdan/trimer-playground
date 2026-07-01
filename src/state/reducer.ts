@@ -54,7 +54,7 @@ export type AppAction =
   | { type: 'SET_DIMENSIONS'; rows: number; cols: number }
   | { type: 'EDIT_CELL_A'; row: number; col: number; value: number }
   | { type: 'EDIT_CELL_B'; row: number; col: number; value: number }
-  | { type: 'APPLY_MOVE'; moveType: MoveType; position?: CellPosition }
+  | { type: 'APPLY_MOVE'; moveType: MoveType; position?: CellPosition; allowAbove3?: boolean }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET_TO_START' }
@@ -64,7 +64,7 @@ export type AppAction =
   | { type: 'SET_MODE'; mode: InteractionMode }
   | { type: 'TOGGLE_TARGET' }
   | { type: 'TOGGLE_WORKING' }
-  | { type: 'FILL_ALL_PLUS3' }
+  | { type: 'FILL_ALL_PLUS3'; allowAbove3?: boolean }
   | { type: 'DISMISS_TOAST' }
   | { type: 'IMPORT_STATE'; data: ImportedState };
 
@@ -100,12 +100,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
 
     case 'APPLY_MOVE': {
-      const validation = validateMove(state.liveGrid, action.moveType, action.position);
+      const allowAbove3 = action.allowAbove3 ?? false;
+      const validation = validateMove(state.liveGrid, action.moveType, action.position, allowAbove3);
       if (!validation.valid) {
         return { ...state, toastMessage: validation.reason ?? 'Invalid move' };
       }
 
-      const { newGrid, move } = applyMove(state.liveGrid, action.moveType, action.position);
+      const { newGrid, move } = applyMove(state.liveGrid, action.moveType, action.position, allowAbove3);
       const entry: HistoryEntry = {
         move,
         gridBefore: state.liveGrid,
@@ -235,6 +236,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
 
     case 'FILL_ALL_PLUS3': {
+      const fillAllowAbove3 = action.allowAbove3 ?? false;
       let currentGrid = state.liveGrid;
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       let currentIndex = state.historyIndex;
@@ -242,7 +244,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       for (let i = 0; i < currentGrid.length; i++) {
         for (let j = 0; j < currentGrid[i].length; j++) {
           if (currentGrid[i][j] < 3) {
-            const { newGrid, move } = applyMove(currentGrid, 'plus-3', { row: i, col: j });
+            const { newGrid, move } = applyMove(currentGrid, 'plus-3', { row: i, col: j }, fillAllowAbove3);
             const entry: HistoryEntry = {
               move,
               gridBefore: currentGrid,

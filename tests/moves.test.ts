@@ -175,3 +175,50 @@ describe('move application', () => {
     expect(() => applyMove(g, 'horizontal-trimer', { row: 0, col: 0 })).toThrow();
   });
 });
+
+// --- allowAbove3 toggle tests ---
+
+describe('allowAbove3 toggle', () => {
+  it('H-trimer on cells with value 4 is accepted when allowAbove3=true', () => {
+    const g: Grid = [[4, 4, 4, 0]];
+    const result = validateMove(g, 'horizontal-trimer', { row: 0, col: 0 }, true);
+    expect(result.valid).toBe(true);
+  });
+
+  it('H-trimer on cells with value 4 is rejected when allowAbove3=false', () => {
+    const g: Grid = [[4, 4, 4, 0]];
+    const result = validateMove(g, 'horizontal-trimer', { row: 0, col: 0 }, false);
+    expect(result.valid).toBe(false);
+  });
+
+  it('V-trimer on cells with value 5 is accepted when allowAbove3=true', () => {
+    const g: Grid = [[5], [5], [5]];
+    const result = validateMove(g, 'vertical-trimer', { row: 0, col: 0 }, true);
+    expect(result.valid).toBe(true);
+  });
+
+  it('+3 on a cell with value 5 is accepted when allowAbove3=true', () => {
+    const g: Grid = [[5, 0]];
+    const result = validateMove(g, 'plus-3', { row: 0, col: 0 }, true);
+    expect(result.valid).toBe(true);
+  });
+
+  it('+3 on a cell with value 5 is rejected when allowAbove3=false', () => {
+    const g: Grid = [[5, 0]];
+    const result = validateMove(g, 'plus-3', { row: 0, col: 0 }, false);
+    expect(result.valid).toBe(false);
+  });
+
+  it('H-trimer still requires all cells equal even with allowAbove3=true', () => {
+    const g: Grid = [[4, 5, 4, 0]];
+    const result = validateMove(g, 'horizontal-trimer', { row: 0, col: 0 }, true);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toContain('not all equal');
+  });
+
+  it('applyMove works with allowAbove3 for H-trimer on value 4', () => {
+    const g: Grid = [[4, 4, 4, 0]];
+    const { newGrid } = applyMove(g, 'horizontal-trimer', { row: 0, col: 0 }, true);
+    expect(newGrid[0]).toEqual([5, 5, 5, 0]);
+  });
+});
