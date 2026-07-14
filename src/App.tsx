@@ -1,6 +1,10 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { RectangularRoute } from './routes/RectangularRoute';
 import { PolyominoRoute } from './routes/PolyominoRoute';
+// Strict-model tabs. Everything they need lives under src/strict/; deleting that folder
+// and the four lines below (two imports, two NavLinks, two Routes) reverts this file.
+import { RectangularBaseStrict } from './strict/tabs/RectangularBaseStrict';
+import { PolyominoStrict } from './strict/tabs/PolyominoStrict';
 
 function App() {
   return (
@@ -41,6 +45,36 @@ function App() {
             >
               Polyomino Base
             </NavLink>
+            <NavLink
+              to="/rectangular-strict"
+              className={({ isActive }) =>
+                `px-3 py-1.5 text-sm rounded transition-colors flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900 font-semibold border-b-2 border-gray-800'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`
+              }
+            >
+              Rectangular Base
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                strict
+              </span>
+            </NavLink>
+            <NavLink
+              to="/polyomino-strict"
+              className={({ isActive }) =>
+                `px-3 py-1.5 text-sm rounded transition-colors flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900 font-semibold border-b-2 border-gray-800'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`
+              }
+            >
+              Polyomino
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                strict
+              </span>
+            </NavLink>
           </nav>
         </div>
       </header>
@@ -49,6 +83,8 @@ function App() {
       <Routes>
         <Route path="/rectangular" element={<RectangularRoute />} />
         <Route path="/polyomino" element={<PolyominoRoute />} />
+        <Route path="/rectangular-strict" element={<RectangularBaseStrict />} />
+        <Route path="/polyomino-strict" element={<PolyominoStrict />} />
         <Route path="*" element={<Navigate to="/rectangular" replace />} />
       </Routes>
     </div>
