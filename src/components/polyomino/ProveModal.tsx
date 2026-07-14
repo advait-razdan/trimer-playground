@@ -265,14 +265,22 @@ export function ProveModal({ liveGrid, targetGrid, mask, basis, onClose }: Prove
             <div className="text-sm text-gray-700">
               BFS enumerated <span className="font-semibold font-mono">{result.totalReachable}</span> states reachable from the live grid. Target B is <span className="font-semibold text-red-700">not among them</span>.
             </div>
-            <div className="text-xs text-gray-600">
-              Disagreeing fingerprints:
-              {result.disagreeing.map(d => (
-                <div key={d.name} className="ml-2">
-                  {d.name}: live = {d.valueA}, B = {d.valueB}
-                </div>
-              ))}
-            </div>
+            {result.disagreeing.length > 0 ? (
+              <div className="text-xs text-gray-600">
+                Disagreeing fingerprints:
+                {result.disagreeing.map(d => (
+                  <div key={d.name} className="ml-2">
+                    {d.name}: live = {d.valueA}, B = {d.valueB}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs text-gray-600">
+                Every fingerprint agrees, yet B is still unreachable. The fingerprints ignore the
+                rule that a trimer needs three equal cells, so they can only rule reachability out —
+                never in. The search settles it.
+              </div>
+            )}
             <div className="text-xs text-red-700 bg-red-50 px-3 py-2 rounded border border-red-200">
               Proved: no sequence of legal trimer moves can take A to B.
             </div>

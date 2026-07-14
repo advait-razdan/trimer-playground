@@ -10,13 +10,8 @@
 
 import type { InvariantBasis } from './invariants';
 import { computeWord } from './invariants';
-import { findMoveSequence, enumerateReachable } from './bfs';
+import { findMoveSequence, enumerateReachable, encodeProfile } from './bfs';
 import type { MoveStep } from './bfs';
-
-/** Non-negative mod 3. */
-function mod3(n: number): number {
-  return ((n % 3) + 3) % 3;
-}
 
 /** The cell count threshold below which we attempt exhaustive BFS. */
 const EXHAUSTIVE_BFS_CELL_LIMIT = 15;
@@ -73,7 +68,7 @@ export function prove(
     }
   }
 
-  // Case: words match -> reachable
+  // Case: words match -> the fingerprints permit reachability. Search for a path.
   if (disagreeing.length === 0) {
     const bfsResult = findMoveSequence(profileA, profileB, basis);
     if (bfsResult.status === 'identical') {
@@ -82,12 +77,17 @@ export function prove(
     if (bfsResult.status === 'found') {
       return { type: 'reachable', sequence: bfsResult.sequence };
     }
-    if (bfsResult.status === 'too_large') {
-      // Words match but BFS can't find the path — return reachable with empty sequence
-      // (theoretically reachable but path too long to find)
-      return { type: 'reachable', sequence: [] };
+    if (bfsResult.status === 'unreachable') {
+      // The search exhausted every state reachable from A within budget and never
+      // found B. That is a proof: the fingerprints ignore the equal-cells rule, so
+      // matching words are necessary but not always sufficient.
+      return {
+        type: 'unreachable_exhaustive',
+        totalReachable: enumerateReachable(profileA, basis).states.size,
+        disagreeing,
+      };
     }
-    // Shouldn't happen if words match, but be safe
+    // too_large: words match, but the search hit the state cap before finding a path.
     return { type: 'reachable', sequence: [] };
   }
 
@@ -97,9 +97,7 @@ export function prove(
     const enumResult = enumerateReachable(profileA, basis);
     if (!enumResult.capped) {
       // Check target is not in the set
-      const targetVec = basis.cells.map(c => mod3(profileB[c.row][c.col]));
-      const targetKey = targetVec.join(',');
-      const targetInSet = enumResult.states.has(targetKey);
+      const targetInSet = enumResult.states.has(encodeProfile(profileB, basis));
 
       if (!targetInSet) {
         return {
