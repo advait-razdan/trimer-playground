@@ -2,7 +2,7 @@ import { useReducer, useEffect, useCallback, useState, useRef, useMemo } from 'r
 import { appReducer, createInitialState } from '../state/reducer';
 import { computeFingerprints } from '../state/fingerprints';
 import { computeAllTraces } from '../state/fingerprints';
-import { canApplyMod3 } from '../state/moves';
+import { canApplyMod3, findLegalMoves } from '../state/moves';
 import { GridA } from '../components/GridA';
 import { LiveGrid } from '../components/LiveGrid';
 import { GridB } from '../components/GridB';
@@ -121,6 +121,11 @@ export function RectangularRoute() {
   const [replayTarget, setReplayTarget] = useState<number | null>(null);
   const replayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Random auto-play state
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [autoSpeed, setAutoSpeed] = useState(500);
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Detect when a new move is applied and trigger pulse
   useEffect(() => {
     const prevIdx = prevHistoryIndexRef.current;
@@ -205,6 +210,43 @@ export function RectangularRoute() {
       if (replayTimerRef.current) clearTimeout(replayTimerRef.current);
     };
   }, [replayTarget, historyIndex]);
+
+  // Random auto-play effect: schedule the next random legal move (+3, H-trimer,
+  // or V-trimer). Re-runs whenever liveGrid changes, forming a self-rescheduling
+  // loop that only stops when the user pauses.
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+
+    const legalMoves = findLegalMoves(liveGrid, rules.allowPlacementAbove3);
+
+    autoTimerRef.current = setTimeout(() => {
+      if (legalMoves.length === 0) {
+        // No legal move left: fill any remaining cells to +3, reduce mod-3,
+        // then keep going (the reset opens up fresh legal moves).
+        dispatch({ type: 'FILL_ALL_PLUS3', allowAbove3: rules.allowPlacementAbove3 });
+        dispatch({ type: 'APPLY_MOVE', moveType: 'mod-3', allowAbove3: rules.allowPlacementAbove3 });
+        return;
+      }
+      const pick = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+      dispatch({
+        type: 'APPLY_MOVE',
+        moveType: pick.type,
+        position: pick.position,
+        allowAbove3: rules.allowPlacementAbove3,
+      });
+    }, autoSpeed);
+
+    return () => {
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    };
+  }, [isAutoPlaying, autoSpeed, liveGrid, rules.allowPlacementAbove3]);
+
+  const handleToggleAutoPlay = () => {
+    setIsAutoPlaying(prev => {
+      if (!prev) setReplayTarget(null); // stop step-replay so timers don't fight
+      return !prev;
+    });
+  };
 
   // Derived state
   const liveFingerprints = computeFingerprints(liveGrid);
@@ -515,10 +557,15 @@ export function RectangularRoute() {
             onMod3={() => dispatch({ type: 'APPLY_MOVE', moveType: 'mod-3', allowAbove3: rules.allowPlacementAbove3 })}
             onFillPlus3={() => dispatch({ type: 'FILL_ALL_PLUS3', allowAbove3: rules.allowPlacementAbove3 })}
             onReset={() => {
+              setIsAutoPlaying(false);
               if (history.length > 0) {
                 dispatch({ type: 'RESET_TO_START' });
               }
             }}
+            isAutoPlaying={isAutoPlaying}
+            autoSpeed={autoSpeed}
+            onToggleAutoPlay={handleToggleAutoPlay}
+            onAutoSpeedChange={setAutoSpeed}
           />
 
           {/* Export/Import */}

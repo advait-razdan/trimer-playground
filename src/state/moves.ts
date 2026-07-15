@@ -97,6 +97,31 @@ export function validateMove(
   return { valid: false, reason: `Unknown move type: ${moveType}` };
 }
 
+/** Enumerate every legal placement move on the grid: +3 on a single cell,
+ *  and horizontal/vertical trimers. Excludes mod-3 (a whole-grid operation). */
+export function findLegalMoves(
+  grid: Grid,
+  allowAbove3 = false,
+): { type: MoveType; position: CellPosition }[] {
+  const rows = grid.length;
+  const cols = grid[0]?.length ?? 0;
+  const moves: { type: MoveType; position: CellPosition }[] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      if (validateMove(grid, 'plus-3', { row, col }, allowAbove3).valid) {
+        moves.push({ type: 'plus-3', position: { row, col } });
+      }
+      if (validateMove(grid, 'horizontal-trimer', { row, col }, allowAbove3).valid) {
+        moves.push({ type: 'horizontal-trimer', position: { row, col } });
+      }
+      if (validateMove(grid, 'vertical-trimer', { row, col }, allowAbove3).valid) {
+        moves.push({ type: 'vertical-trimer', position: { row, col } });
+      }
+    }
+  }
+  return moves;
+}
+
 /** Apply a move to the grid, returning a new grid and the Move record. Throws if invalid. */
 export function applyMove(
   grid: Grid,

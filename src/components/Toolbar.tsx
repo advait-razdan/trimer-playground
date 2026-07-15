@@ -12,7 +12,16 @@ interface ToolbarProps {
   onMod3: () => void;
   onFillPlus3: () => void;
   onReset: () => void;
+  // Optional random auto-play controls (only rendered when onToggleAutoPlay is provided)
+  isAutoPlaying?: boolean;
+  autoSpeed?: number;
+  onToggleAutoPlay?: () => void;
+  onAutoSpeedChange?: (ms: number) => void;
 }
+
+/** Auto-play delay bounds (ms between random moves) */
+const AUTO_SPEED_MIN = 100;
+const AUTO_SPEED_MAX = 1500;
 
 const MODE_BUTTONS: { mode: InteractionMode; label: string; shortcut: string; activeColor: string }[] = [
   { mode: 'horizontal-trimer', label: 'H-Trimer', shortcut: 'H', activeColor: 'bg-red-500 text-white border-red-600' },
@@ -32,6 +41,10 @@ export function Toolbar({
   onMod3,
   onFillPlus3,
   onReset,
+  isAutoPlaying = false,
+  autoSpeed = 500,
+  onToggleAutoPlay,
+  onAutoSpeedChange,
 }: ToolbarProps) {
   return (
     <div className="flex flex-wrap gap-2 items-center py-2 px-3 bg-gray-50 rounded border border-gray-200">
@@ -99,6 +112,39 @@ export function Toolbar({
       >
         Reset to start
       </button>
+
+      {/* Random auto-play controls */}
+      {onToggleAutoPlay && (
+        <>
+          <div className="w-px h-6 bg-gray-300 mx-1" />
+          <button
+            className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${
+              isAutoPlaying
+                ? 'bg-orange-500 text-white border-orange-600 hover:bg-orange-600'
+                : 'bg-green-600 text-white border-green-700 hover:bg-green-700'
+            }`}
+            onClick={onToggleAutoPlay}
+            title={isAutoPlaying ? 'Pause random move placement' : 'Automatically place random legal trimer moves'}
+          >
+            {isAutoPlaying ? 'Pause' : 'Start random moves'}
+          </button>
+          <label className="flex items-center gap-1.5 text-xs text-gray-500">
+            Speed
+            <input
+              type="range"
+              min={AUTO_SPEED_MIN}
+              max={AUTO_SPEED_MAX}
+              step={100}
+              // Slider maps left→right to slow→fast, so invert the delay.
+              value={AUTO_SPEED_MIN + AUTO_SPEED_MAX - autoSpeed}
+              onChange={(e) => onAutoSpeedChange?.(AUTO_SPEED_MIN + AUTO_SPEED_MAX - Number(e.target.value))}
+              className="w-24 accent-green-600"
+              title={`${autoSpeed}ms between moves`}
+            />
+            <span className="tabular-nums text-gray-400 w-12">{autoSpeed}ms</span>
+          </label>
+        </>
+      )}
 
       {/* Current mode indicator */}
       {mode !== 'select' && (
