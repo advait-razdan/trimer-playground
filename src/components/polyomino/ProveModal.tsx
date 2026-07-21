@@ -5,6 +5,7 @@ import type { InvariantBasis } from '../../state/invariants';
 import { prove } from '../../state/proof';
 import type { ProofResult } from '../../state/proof';
 import type { MoveStep } from '../../state/bfs';
+import { MiniGrid, PlayerTransport } from '../shared/PopupPlayer';
 
 interface ProveModalProps {
   liveGrid: Grid;
@@ -12,17 +13,6 @@ interface ProveModalProps {
   mask: ShapeMask;
   basis: InvariantBasis;
   onClose: () => void;
-}
-
-const CELL_COLORS: Record<string, string> = {
-  '0': '#f3f1ec',
-  '1': '#c8dde3',
-  '2': '#6fa3b0',
-};
-
-function getCellColor(val: number): string {
-  if (val >= 3) return '#e8d5a3';
-  return CELL_COLORS[String(val)] ?? '#f3f1ec';
 }
 
 /** Non-negative mod 3. */
@@ -45,40 +35,6 @@ function applyMoveStep(grid: Grid, _mask: ShapeMask, step: MoveStep): Grid {
     newGrid[row + 2][col] = mod3(newGrid[row + 2][col] + multiplicity);
   }
   return newGrid;
-}
-
-function MiniGrid({ grid, mask, highlightCells }: { grid: Grid; mask: ShapeMask; highlightCells?: Set<string> }) {
-  return (
-    <table className="border-collapse">
-      <tbody>
-        {grid.map((row, i) => (
-          <tr key={i}>
-            {row.map((val, j) => {
-              const active = mask[i]?.[j] ?? false;
-              const highlighted = highlightCells?.has(`${i},${j}`);
-              return (
-                <td
-                  key={j}
-                  className="w-7 h-7 text-center text-xs font-mono"
-                  style={{
-                    backgroundColor: active ? getCellColor(val) : '#e5e7eb',
-                    border: highlighted
-                      ? '2px solid #22c55e'
-                      : '1px solid #d1d5db',
-                    backgroundImage: active ? 'none' : 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
-                    opacity: active ? 1 : 0.3,
-                    transition: 'background-color 0.3s ease',
-                  }}
-                >
-                  {active ? val : ''}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
 }
 
 function ReachableDisplay({ sequence, liveGrid, mask }: { sequence: MoveStep[]; liveGrid: Grid; mask: ShapeMask }) {
@@ -138,55 +94,16 @@ function ReachableDisplay({ sequence, liveGrid, mask }: { sequence: MoveStep[]; 
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <button
-          className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-40"
-          disabled={stepIndex <= -1}
-          onClick={() => setStepIndex(-1)}
-        >|&lt;</button>
-        <button
-          className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-40"
-          disabled={stepIndex <= -1}
-          onClick={() => setStepIndex(prev => prev - 1)}
-        >&lt;</button>
-        {isPlaying ? (
-          <button
-            className="px-2 py-1 text-xs border border-red-300 text-red-600 rounded hover:bg-red-50"
-            onClick={() => setIsPlaying(false)}
-          >Stop</button>
-        ) : (
-          <button
-            className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-40"
-            disabled={stepIndex >= sequence.length - 1}
-            onClick={() => { setIsPlaying(true); if (stepIndex < 0) setStepIndex(0); }}
-          >Play</button>
-        )}
-        <button
-          className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-40"
-          disabled={stepIndex >= sequence.length - 1}
-          onClick={() => setStepIndex(prev => prev + 1)}
-        >&gt;</button>
-        <button
-          className="px-2 py-1 text-xs border rounded hover:bg-gray-100 disabled:opacity-40"
-          disabled={stepIndex >= sequence.length - 1}
-          onClick={() => setStepIndex(sequence.length - 1)}
-        >&gt;|</button>
-        <label className="flex items-center gap-1 ml-2 text-xs text-gray-500">
-          Speed
-          <input
-            type="range"
-            min={100}
-            max={5000}
-            step={100}
-            value={5100 - playbackSpeed}
-            onChange={e => setPlaybackSpeed(5100 - Number(e.target.value))}
-            className="w-20 h-3 accent-blue-500"
-          />
-        </label>
-        <span className="text-xs text-gray-500 ml-2">
-          Step {stepIndex + 1} of {sequence.length}
-        </span>
-      </div>
+      <PlayerTransport
+        stepIndex={stepIndex}
+        stepCount={sequence.length}
+        isPlaying={isPlaying}
+        speed={playbackSpeed}
+        onSeek={setStepIndex}
+        onPlay={() => { setIsPlaying(true); if (stepIndex < 0) setStepIndex(0); }}
+        onPause={() => setIsPlaying(false)}
+        onSpeedChange={setPlaybackSpeed}
+      />
 
       <MiniGrid grid={currentGrid} mask={mask} highlightCells={highlightCells} />
 

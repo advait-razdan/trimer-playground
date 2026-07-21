@@ -5,6 +5,9 @@ import { PolyominoRoute } from './routes/PolyominoRoute';
 // and the four lines below (two imports, two NavLinks, two Routes) reverts this file.
 import { RectangularBaseStrict } from './strict/tabs/RectangularBaseStrict';
 import { PolyominoStrict } from './strict/tabs/PolyominoStrict';
+// Reversibility tab. Everything it needs lives under src/reversibility/; deleting
+// that folder and the three lines below (import, NavLink, Route) reverts this file.
+import { ReversibilityTab } from './reversibility/ReversibilityTab';
 
 function App() {
   return (
@@ -75,6 +78,18 @@ function App() {
                 strict
               </span>
             </NavLink>
+            <NavLink
+              to="/reversibility"
+              className={({ isActive }) =>
+                `px-3 py-1.5 text-sm rounded transition-colors ${
+                  isActive
+                    ? 'bg-gray-100 text-gray-900 font-semibold border-b-2 border-gray-800'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`
+              }
+            >
+              Reversibility
+            </NavLink>
           </nav>
         </div>
       </header>
@@ -85,6 +100,7 @@ function App() {
         <Route path="/polyomino" element={<PolyominoRoute />} />
         <Route path="/rectangular-strict" element={<RectangularBaseStrict />} />
         <Route path="/polyomino-strict" element={<PolyominoStrict />} />
+        <Route path="/reversibility" element={<ReversibilityTab />} />
         <Route path="*" element={<Navigate to="/rectangular" replace />} />
       </Routes>
     </div>
